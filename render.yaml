@@ -1,0 +1,22 @@
+services:
+  # 1. El Navegador (Privado, no accesible desde afuera)
+  - type: pvtserver
+    name: job-browser
+    runtime: docker
+    dockerContext: ./job-linkedin
+    dockerFilePath: Dockerfile.browser
+    envVars:
+      - key: SE_NODE_MAX_SESSIONS
+        value: 1
+    plan: free # Se recomienda starter (512MB-1GB) para Chrome
+
+  # 2. La aplicación Rust (Pública)
+  - type: web
+    name: job-hunter-app
+    runtime: docker
+    dockerContext: ./job-linkedin
+    dockerFilePath: Dockerfile
+    envVars:
+      - key: SELENIUM_URL
+        value: http://job-browser:4444
+    plan: free

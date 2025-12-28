@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Hunter Spain</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .htmx-indicator { opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in; }
+        .htmx-request .htmx-indicator { opacity: 1; pointer-events: all; }
+        .htmx-request.loading-btn { opacity: 0.7; cursor: wait; }
+    </style>
+</head>
+<body class="h-full flex flex-col">
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="bg-slate-900 text-white p-1.5 rounded-lg font-bold">JH</div>
+                <span class="font-bold text-slate-900">Job Hunter <span class="text-blue-600">Pro</span></span>
+            </div>
+            <a href="http://localhost:7900" target="_blank" class="text-xs bg-slate-100 px-3 py-1.5 rounded-md hover:bg-slate-200 transition">Monitor VNC</a>
+        </div>
+    </nav>
+
+    <main class="flex-grow pt-8 pb-12 px-4 max-w-6xl mx-auto w-full">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+            <h1 class="text-xl font-bold text-slate-900 mb-6">Configuración de Búsqueda</h1>
+            <form hx-post="/search" hx-target="#results-area" hx-indicator="#loading" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+                    <div class="md:col-span-5">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Puesto</label>
+                        <input type="text" name="keywords" required class="w-full rounded-lg border-slate-300 p-2.5 bg-slate-50 focus:bg-white border" placeholder="Ej: Rust Backend">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Lugar</label>
+                        <input type="text" name="location" required class="w-full rounded-lg border-slate-300 p-2.5 bg-slate-50 focus:bg-white border" placeholder="Ej: Madrid">
+                    </div>
+                    <div class="md:col-span-4">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fuente</label>
+                        <select name="provider" class="w-full rounded-lg border-slate-300 p-2.5 bg-white border">
+                            <optgroup label="🔥 Recomendado (Google)">
+                                <option value="google_linkedin" selected>LinkedIn (X-Ray)</option>
+                                <option value="google_infojobs">InfoJobs (X-Ray)</option>
+                                <option value="google_indeed">Indeed (X-Ray)</option>
+                            </optgroup>
+                            <optgroup label="💻 Tech">
+                                <option value="google_manfred">Manfred</option>
+                                <option value="google_ticjob">TicJob</option>
+                                <option value="google_stackoverflow">StackOverflow</option>
+                            </optgroup>
+                             <optgroup label="🌍 Remoto">
+                                <option value="google_wwr">We Work Remotely</option>
+                                <option value="google_remoteok">RemoteOK</option>
+                            </optgroup>
+                            <optgroup label="⚠️ Directo">
+                                <option value="linkedin_direct">LinkedIn Nativo</option>
+                                <option value="infojobs_direct">InfoJobs Nativo</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" class="loading-btn bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-blue-700 transition">Buscar Ofertas</button>
+                </div>
+            </form>
+            <div id="loading" class="htmx-indicator absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-10 rounded-xl">
+                <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <p class="mt-4 font-medium text-slate-600">Rastreando ofertas...</p>
+            </div>
+        </div>
+
+        <div id="results-area" class="min-h-[200px]"></div>
+    </main>
+</body>
+</html>

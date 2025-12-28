@@ -1,0 +1,8 @@
+FROM selenium/standalone-chrome:latest
+
+# Exponer puertos internos
+EXPOSE 4444
+EXPOSE 7900
+
+# Evitar límites de memoria compartida en entornos cloud
+ENV SE_OPTS="--host 0.0.0.0"

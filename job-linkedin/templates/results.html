@@ -1,0 +1,199 @@
+<div class="animate-fade-in-up space-y-6" x-data="{ modalOpen: false, selectedJob: null }">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-end border-b border-gray-200 pb-4">
+        <div>
+            <h2 class="text-xl font-bold text-gray-900">Análisis de Mercado</h2>
+            <div class="flex items-center gap-2 mt-1 text-sm text-gray-500">
+                <span>Query: <strong>{{ keywords }}</strong></span>
+                <span>•</span>
+                <span>Fuente: <strong>{{ provider }}</strong></span>
+            </div>
+        </div>
+        <div class="mt-2 sm:mt-0 flex gap-2 items-center">
+             <span class="inline-flex items-center rounded-md bg-indigo-50 px-2.5 py-0.5 text-sm font-medium text-indigo-700 border border-indigo-100">
+                {{ jobs.len() }} Resultados
+            </span>
+             {% if !jobs.is_empty() %}
+            <button onclick="exportData('csv')" class="text-xs bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded font-bold hover:bg-gray-50 transition">Exportar CSV</button>
+            <button onclick="exportData('json')" class="text-xs bg-slate-900 text-white px-3 py-1.5 rounded font-bold hover:bg-slate-800 transition">API JSON</button>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if jobs.is_empty() %}
+        <div class="rounded-lg bg-orange-50 p-8 border border-orange-200 text-center">
+            <h3 class="text-sm font-bold text-orange-900">Sin datos disponibles</h3>
+            <p class="mt-1 text-xs text-orange-700">Verifica el monitor VNC o prueba con términos más generales.</p>
+        </div>
+    {% else %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {% for job in jobs %}
+            <!-- La tarjeta entera es clickeable y abre el modal -->
+            <article onclick="openJobModal({{ loop.index0 }})" class="cursor-pointer flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-indigo-400 transition-all duration-200 group h-full relative overflow-hidden">
+                
+                <div class="absolute top-0 right-0 p-3 z-10">
+                     <span class="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-500 border border-slate-200">
+                        {{ job.source.to_string() }}
+                    </span>
+                </div>
+
+                <div class="p-5 flex-1 pt-10">
+                    <h3 class="text-base font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-2">
+                        {{ job.title }}
+                    </h3>
+                    <p class="mt-1 text-xs font-semibold text-slate-500 uppercase tracking-wide truncate pr-4">
+                        {{ job.company }}
+                    </p>
+
+                    <div class="mt-4 space-y-2">
+                         <div class="flex items-start text-xs text-slate-600">
+                            <span class="mr-1">📍</span> <span class="line-clamp-1">{{ job.location }}</span>
+                        </div>
+                        {% if let Some(salary) = job.salary %}
+                        <div class="flex items-center text-xs font-bold text-green-700 bg-green-50 px-2 py-1 rounded w-fit border border-green-100">
+                            <span class="mr-1">💰</span> {{ salary }}
+                        </div>
+                        {% endif %}
+                         <div class="flex gap-2 pt-1">
+                            {% if job.location_type.is_some() %}
+                            <span class="bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded font-bold">Remoto</span>
+                            {% endif %}
+                             <span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded">{{ job.date_posted_iso }}</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- MODAL (Overlay) -->
+    <div id="job-modal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeModal()"></div>
+
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto pointer-events-none">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                
+                <div class="pointer-events-auto relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl border border-gray-200">
+                    
+                    <!-- Header Modal -->
+                    <div class="bg-slate-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                        <h3 class="text-base font-semibold leading-6 text-gray-900" id="modal-title">Detalle de Oferta</h3>
+                        <button type="button" class="text-gray-400 hover:text-gray-500" onclick="closeModal()">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="px-6 py-6">
+                        <div id="modal-content" class="space-y-4">
+                            <!-- JS inyectará aquí los datos -->
+                        </div>
+                        
+                        <!-- Tabs -->
+                        <div class="mt-6 border-b border-gray-200">
+                            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                                <a href="#" onclick="switchTab('visual')" id="tab-visual" class="border-indigo-500 text-indigo-600 whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium">Ficha Visual</a>
+                                <a href="#" onclick="switchTab('json')" id="tab-json" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium">Schema.org JSON</a>
+                            </nav>
+                        </div>
+                        
+                        <!-- Tab Content: JSON -->
+                        <div id="view-json" class="hidden mt-4 bg-slate-900 rounded-lg p-4 overflow-auto max-h-60 text-xs text-green-400 font-mono">
+                            <pre id="json-code"></pre>
+                        </div>
+                        <!-- Tab Content: Visual -->
+                        <div id="view-visual" class="mt-4 text-sm text-gray-600">
+                            <p id="modal-desc" class="italic text-gray-500 border-l-4 border-gray-200 pl-3"></p>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-gray-200">
+                        <a id="modal-apply-btn" href="#" target="_blank" class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto">Aplicar en Origen</a>
+                        <button type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto" onclick="closeModal()">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DATA & LOGIC -->
+    <script id="job-data" type="application/json">{{ jobs_json|safe }}</script>
+    <script>
+        // Datos globales
+        let allJobs = [];
+        try {
+            allJobs = JSON.parse(document.getElementById('job-data').textContent);
+        } catch(e) { console.error("Error parseando jobs", e); }
+
+        function openJobModal(index) {
+            const job = allJobs[index];
+            if(!job) return;
+
+            // Rellenar visual
+            document.getElementById('modal-title').innerText = job.jobTitle; // Nota: Rust serializa como jobTitle por el rename
+            document.getElementById('modal-desc').innerText = job.description || "Sin descripción corta disponible.";
+            document.getElementById('modal-apply-btn').href = job.url;
+
+            // Crear contenido HTML dinámico para "Visual"
+            const content = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div><span class="text-xs font-bold uppercase text-gray-500">Empresa</span><p class="font-medium text-gray-900">${job.hiringOrganization}</p></div>
+                    <div><span class="text-xs font-bold uppercase text-gray-500">Ubicación</span><p class="font-medium text-gray-900">${job.jobLocation}</p></div>
+                    <div><span class="text-xs font-bold uppercase text-gray-500">Contrato</span><p class="font-medium text-gray-900">${job.employmentType}</p></div>
+                    <div><span class="text-xs font-bold uppercase text-gray-500">Salario</span><p class="font-medium text-green-700">${job.baseSalary || '--'}</p></div>
+                    <div><span class="text-xs font-bold uppercase text-gray-500">Publicado</span><p class="font-medium text-gray-900">${job.datePosted}</p></div>
+                    <div><span class="text-xs font-bold uppercase text-gray-500">Tipo</span><p class="font-medium text-purple-700">${job.jobLocationType || 'Presencial'}</p></div>
+                </div>
+            `;
+            document.getElementById('modal-content').innerHTML = content;
+
+            // Rellenar JSON
+            document.getElementById('json-code').innerText = JSON.stringify(job, null, 2);
+
+            // Mostrar
+            switchTab('visual');
+            document.getElementById('job-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('job-modal').classList.add('hidden');
+        }
+
+        function switchTab(tab) {
+            if(tab === 'visual') {
+                document.getElementById('view-visual').classList.remove('hidden');
+                document.getElementById('view-json').classList.add('hidden');
+                document.getElementById('tab-visual').classList.add('border-indigo-500', 'text-indigo-600');
+                document.getElementById('tab-json').classList.remove('border-indigo-500', 'text-indigo-600');
+            } else {
+                document.getElementById('view-visual').classList.add('hidden');
+                document.getElementById('view-json').classList.remove('hidden');
+                document.getElementById('tab-json').classList.add('border-indigo-500', 'text-indigo-600');
+                document.getElementById('tab-visual').classList.remove('border-indigo-500', 'text-indigo-600');
+            }
+        }
+
+        function exportData(format) {
+            // ... (Lógica de exportación CSV/JSON igual que antes) ...
+             const filename = `jobs_${new Date().toISOString().slice(0,10)}`;
+             if (format === 'json') {
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(new Blob([JSON.stringify(allJobs, null, 2)], {type: 'application/json'}));
+                a.download = filename + '.json';
+                a.click();
+            } else {
+                 // CSV logic simplificada para el ejemplo
+                 const headers = Object.keys(allJobs[0]).join(",");
+                 const rows = allJobs.map(obj => Object.values(obj).map(v => `"${v}"`).join(",")).join("\n");
+                 const csv = headers + "\n" + rows;
+                 const a = document.createElement("a");
+                 a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
+                 a.download = filename + '.csv';
+                 a.click();
+            }
+        }
+    </script>
+</div>
